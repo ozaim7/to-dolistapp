@@ -1,0 +1,44 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysqldb
+    restart: always
+    volumes:
+      - ./db:/var/lib/mysql # Veritabanı verilerini yerel diskte saklama
+      - ./my.cnf:/etc/mysql/my.cnf # Özel yapılandırma dosyasını bağlama
+      - ./db_init.sql:/docker-entrypoint-initdb.d/db_init.sql # Başlangıç SQL betiği
+    environment:
+      MYSQL_ROOT_PASSWORD: root.onur08 # Root kullanıcısı için şifre
+      MYSQL_DATABASE: todo_db # Oluşturulacak varsayılan veritabanı
+      MYSQL_USER: root # Yeni bir kullanıcı oluşturma
+      MYSQL_PASSWORD: root.onur08 # Yeni kullanıcı şifresi
+    ports:
+      - "3307:3306" # Host ve konteyner port eşleştirmesi
+    networks:
+      - spring_mysql
+
+  spring-boot-app:
+    container_name: springbootapp
+    build:
+      context: /Users/onur/desktop/java/to-dolistapp # Dockerfile'ın bulunduğu dizin
+      dockerfile: Dockerfile 
+    restart: always
+    ports:
+      - "8585:8585" # Spring Boot uygulaması port eşleştirmesi
+    depends_on:
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/todo_db # MySQL konteynerine bağlantı
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root.onur08
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SERVER_PORT: 8585
+    networks:
+      - spring_mysql
+
+networks:
+  spring_mysql:
+    driver: bridge
+
